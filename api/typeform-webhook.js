@@ -1,180 +1,102 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2758
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-\f0\fs24 \cf0 // api/typeform-webhook.js\
-// Vercel serverless function to handle Typeform submissions and send to Notion\
-\
-export default async function handler(req, res) \{\
-  // Only accept POST requests\
-  if (req.method !== 'POST') \{\
-    return res.status(405).json(\{ error: 'Method not allowed' \});\
-  \}\
-\
-  try \{\
-    // Extract Typeform submission data\
-    const \{ form_response \} = req.body;\
-    \
-    if (!form_response) \{\
-      return res.status(400).json(\{ error: 'No form response data' \});\
-    \}\
-\
-    // Map Typeform fields to variables\
-    const answers = form_response.answers;\
-    const fields = \{\};\
-    \
-    // Extract answers by field titles (adjust these to match your exact Typeform field titles)\
-    answers.forEach(answer => \{\
-      const question = answer.field.ref || answer.field.title;\
-      \
-      switch(question.toLowerCase()) \{\
-        case 'first_name':\
-        case 'first name':\
-          fields.firstName = answer.text;\
-          break;\
-        case 'last_name':\
-        case 'last name':\
-          fields.lastName = answer.text;\
-          break;\
-        case 'phone_number':\
-        case 'phone number':\
-        case 'phone':\
-          fields.phone = answer.phone_number || answer.text;\
-          break;\
-        case 'email':\
-          fields.email = answer.email;\
-          break;\
-        case 'are_you_bahraini':\
-        case 'are you bahraini':\
-        case 'bahraini':\
-          fields.isBahraini = answer.boolean || (answer.choice && answer.choice.label.toLowerCase() === 'yes');\
-          break;\
-        case 'role':\
-          fields.role = answer.choice ? answer.choice.label : answer.text;\
-          break;\
-        case 'linkedin_link':\
-        case 'linkedin link':\
-        case 'linkedin':\
-          fields.linkedin = answer.url || answer.text;\
-          break;\
-        case 'resume_upload':\
-        case 'resume upload':\
-        case 'resume':\
-        case 'cv':\
-          fields.resume = answer.file_url;\
-          break;\
-        case 'portfolio_upload':\
-        case 'portfolio upload':\
-        case 'portfolio':\
-          fields.portfolio = answer.file_url;\
-          break;\
-      \}\
-    \});\
-\
-    // Create full name\
-    const fullName = `$\{fields.firstName || ''\} $\{fields.lastName || ''\}`.trim();\
-\
-    // Prepare Notion page data\
-    const notionData = \{\
-      parent: \{ database_id: process.env.NOTION_DATABASE_ID \},\
-      properties: \{\
-        // Main name field (assuming it's the title)\
-        'Name': \{\
-          title: [\
-            \{\
-              text: \{\
-                content: fullName || 'New Application'\
-              \}\
-            \}\
-          ]\
-        \},\
-        // Individual name fields\
-        'first name': \{\
-          rich_text: [\
-            \{\
-              text: \{\
-                content: fields.firstName || ''\
-              \}\
-            \}\
-          ]\
-        \},\
-        'last name': \{\
-          rich_text: [\
-            \{\
-              text: \{\
-                content: fields.lastName || ''\
-              \}\
-            \}\
-          ]\
-        \},\
-        'email': \{\
-          email: fields.email || null\
-        \},\
-        'phone': \{\
-          phone_number: fields.phone || null\
-        \},\
-        'linkedin link': \{\
-          url: fields.linkedin || null\
-        \},\
-        'Bahraini?': \{\
-          checkbox: fields.isBahraini || false\
-        \},\
-        'role': \{\
-          select: fields.role ? \{\
-            name: fields.role\
-          \} : null\
-        \},\
-        'CV': \{\
-          url: fields.resume || null\
-        \},\
-        'Portfolio': \{\
-          url: fields.portfolio || null\
-        \},\
-        'Status': \{\
-          select: \{\
-            name: 'New Application'\
-          \}\
-        \}\
-      \}\
-    \};\
-\
-    // Send to Notion\
-    const notionResponse = await fetch('https://api.notion.com/v1/pages', \{\
-      method: 'POST',\
-      headers: \{\
-        'Authorization': `Bearer $\{process.env.NOTION_API_KEY\}`,\
-        'Content-Type': 'application/json',\
-        'Notion-Version': '2022-06-28'\
-      \},\
-      body: JSON.stringify(notionData)\
-    \});\
-\
-    if (!notionResponse.ok) \{\
-      const errorText = await notionResponse.text();\
-      console.error('Notion API Error:', errorText);\
-      return res.status(500).json(\{ \
-        error: 'Failed to create Notion page',\
-        details: errorText \
-      \});\
-    \}\
-\
-    const notionResult = await notionResponse.json();\
-\
-    // Return success response\
-    return res.status(200).json(\{ \
-      success: true, \
-      message: 'Application submitted successfully',\
-      notionPageId: notionResult.id\
-    \});\
-\
-  \} catch (error) \{\
-    console.error('Error processing webhook:', error);\
-    return res.status(500).json(\{ \
-      error: 'Internal server error',\
-      details: error.message \
-    \});\
-  \}\
-\}}
+  try {
+    const { form_response } = req.body;
+    
+    if (!form_response) {
+      return res.status(400).json({ error: 'No form response data' });
+    }
+
+    const answers = form_response.answers;
+    const fields = {};
+    
+    answers.forEach(answer => {
+      const question = answer.field.ref || answer.field.title;
+      
+      if (question.toLowerCase().includes('first')) {
+        fields.firstName = answer.text;
+      } else if (question.toLowerCase().includes('last')) {
+        fields.lastName = answer.text;
+      } else if (question.toLowerCase().includes('phone')) {
+        fields.phone = answer.phone_number || answer.text;
+      } else if (question.toLowerCase().includes('email')) {
+        fields.email = answer.email;
+      } else if (question.toLowerCase().includes('bahraini')) {
+        fields.isBahraini = answer.boolean || (answer.choice && answer.choice.label.toLowerCase() === 'yes');
+      } else if (question.toLowerCase().includes('role')) {
+        fields.role = answer.choice ? answer.choice.label : answer.text;
+      } else if (question.toLowerCase().includes('linkedin')) {
+        fields.linkedin = answer.url || answer.text;
+      } else if (question.toLowerCase().includes('resume') || question.toLowerCase().includes('cv')) {
+        fields.resume = answer.file_url;
+      } else if (question.toLowerCase().includes('portfolio')) {
+        fields.portfolio = answer.file_url;
+      }
+    });
+
+    const fullName = `${fields.firstName || ''} ${fields.lastName || ''}`.trim();
+
+    const notionData = {
+      parent: { database_id: process.env.NOTION_DATABASE_ID },
+      properties: {
+        'Name': {
+          title: [{ text: { content: fullName || 'New Application' } }]
+        },
+        'first name': {
+          rich_text: [{ text: { content: fields.firstName || '' } }]
+        },
+        'last name': {
+          rich_text: [{ text: { content: fields.lastName || '' } }]
+        },
+        'email': {
+          email: fields.email || null
+        },
+        'phone': {
+          phone_number: fields.phone || null
+        },
+        'linkedin link': {
+          url: fields.linkedin || null
+        },
+        'Bahraini?': {
+          checkbox: fields.isBahraini || false
+        },
+        'role': {
+          select: fields.role ? { name: fields.role } : null
+        },
+        'CV': {
+          url: fields.resume || null
+        },
+        'Portfolio': {
+          url: fields.portfolio || null
+        },
+        'Status': {
+          select: { name: 'New Application' }
+        }
+      }
+    };
+
+    const notionResponse = await fetch('https://api.notion.com/v1/pages', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.NOTION_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': '2022-06-28'
+      },
+      body: JSON.stringify(notionData)
+    });
+
+    if (!notionResponse.ok) {
+      const errorText = await notionResponse.text();
+      return res.status(500).json({ error: 'Failed to create Notion page', details: errorText });
+    }
+
+    const notionResult = await notionResponse.json();
+    return res.status(200).json({ success: true, notionPageId: notionResult.id });
+
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+}
