@@ -34,9 +34,47 @@ export default async function handler(req, res) {
     // Use name as the page title, or default to email if no name
     const pageTitle = fields.name || fields.email || 'New Application';
 
+    // Create page content with the detailed answers
+    const pageContent = [];
+    
+    if (fields.whyJoin) {
+      pageContent.push({
+        object: 'block',
+        type: 'heading_2',
+        heading_2: {
+          rich_text: [{ type: 'text', text: { content: 'Why would you like to join our team?' } }]
+        }
+      });
+      pageContent.push({
+        object: 'block',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', text: { content: fields.whyJoin } }]
+        }
+      });
+    }
+    
+    if (fields.whatBring) {
+      pageContent.push({
+        object: 'block',
+        type: 'heading_2',
+        heading_2: {
+          rich_text: [{ type: 'text', text: { content: 'What can you bring to the new venture services arm?' } }]
+        }
+      });
+      pageContent.push({
+        object: 'block',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [{ type: 'text', text: { content: fields.whatBring } }]
+        }
+      });
+    }
+
     const notionData = {
       parent: { database_id: process.env.NOTION_DATABASE_ID_FORM2 },
-      properties: {}
+      properties: {},
+      children: pageContent
     };
 
     // Add fields that exist in your database (based on screenshot)
