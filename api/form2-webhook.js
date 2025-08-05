@@ -59,19 +59,21 @@ export default async function handler(req, res) {
 
     if (fields.nationality) {
       notionData.properties['nationality'] = { 
-        select: { name: fields.nationality }
+        rich_text: [{ text: { content: fields.nationality } }]
       };
     }
 
     if (fields.role) {
       notionData.properties['Role'] = { 
-        select: { name: fields.role }
+        multi_select: [{ name: fields.role }]
       };
     }
 
     if (fields.experience) {
+      // Extract number from experience text like "5+ years experience"
+      const experienceNumber = parseInt(fields.experience.match(/\d+/)?.[0] || '0');
       notionData.properties['experience'] = { 
-        select: { name: fields.experience }
+        number: experienceNumber
       };
     }
 
@@ -110,23 +112,24 @@ export default async function handler(req, res) {
       };
     }
 
-    if (fields.howHear) {
-      notionData.properties['How did you hear ...'] = { 
-        rich_text: [{ text: { content: fields.howHear } }]
-      };
-    }
+    // Remove fields that don't exist in your database
+    // if (fields.howHear) {
+    //   notionData.properties['How did you hear ...'] = { 
+    //     rich_text: [{ text: { content: fields.howHear } }]
+    //   };
+    // }
 
-    if (fields.whyJoin) {
-      notionData.properties['Why join SVS?'] = { 
-        rich_text: [{ text: { content: fields.whyJoin } }]
-      };
-    }
+    // if (fields.whyJoin) {
+    //   notionData.properties['Why join SVS?'] = { 
+    //     rich_text: [{ text: { content: fields.whyJoin } }]
+    //   };
+    // }
 
-    if (fields.whatBring) {
-      notionData.properties['What can you bri...'] = { 
-        rich_text: [{ text: { content: fields.whatBring } }]
-      };
-    }
+    // if (fields.whatBring) {
+    //   notionData.properties['What can you bri...'] = { 
+    //     rich_text: [{ text: { content: fields.whatBring } }]
+    //   };
+    // }
 
     // Set default status
     notionData.properties['Status'] = { 
